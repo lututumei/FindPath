@@ -13,9 +13,6 @@ public class App {
     private Button generateButton = new Button("Generate Path");
     private String fileName;
 
-    //public static int delayTime = 1000;
-    //public static int i = 0;
-
     private LaserMap laserMap;
     private Laser laser;
 
@@ -61,8 +58,10 @@ public class App {
                     System.out.println("[" + mirror.getPo()[0] + ", " + mirror.getPo()[1] + ", " +
                             (mirror.getDir() == Mirror.Dir.DIR0 ? "\\" : "/") + "]");
                 }
-                drawPanel.preparePaintLaserPath(laser.shortestPath);
-                drawPanel.repaint();
+                drawPanel.preparePaintLaserPath(laser.shortestPath, laser.shortestSteps);
+                //drawPanel.repaint();
+                Thread laserPaintThread = new Thread(drawPanel);
+                laserPaintThread.start();
             }
         });
         buttonPanel.add(fileButton);

@@ -5,13 +5,18 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.util.ArrayDeque;
 
-public class DrawPanel extends JPanel {
+public class DrawPanel extends JPanel implements Runnable {
     private final int DRAWPANELWIDTH = AppFrame.HEIGHT - AppFrame.MANUWIDTH;
     private final int DRAWPANELHEIGHT = DRAWPANELWIDTH;
     private final int SURROUNDWIDTH = 20;
 
+    private final double delayTime = 0.05; // s
+    private final double velocity = 8;// 1 grid/ 1 s
+    public static int i = 0;  //loop index
+
     private LaserMap map;
     private ArrayDeque<Mirror> laserPath;
+    private int laserSteps;
     private int width = DRAWPANELWIDTH - 4 * SURROUNDWIDTH;
     private int height = DRAWPANELHEIGHT - 4 * SURROUNDWIDTH;
     private int size; //size between two lines
@@ -68,10 +73,11 @@ public class DrawPanel extends JPanel {
         paintType = PaintType.MAP;
     }
 
-    public void preparePaintLaserPath(ArrayDeque<Mirror> path)
+    public void preparePaintLaserPath(ArrayDeque<Mirror> path, int steps)
     {
         laserPath = path;
         laserPath.addLast(new Mirror(map.getTarget(), Mirror.Dir.DIR0));
+        laserSteps = steps;
         paintType = PaintType.PATH;
     }
 
@@ -116,7 +122,7 @@ public class DrawPanel extends JPanel {
         }
     }
 
-    private void paintLaser(Graphics g){
+    /*private void paintLaser(Graphics g){
         Graphics2D g2 = (Graphics2D)g;
         g2.setColor(new Color(200, 0, 40));
         g2.setStroke(new BasicStroke(3.0f));
@@ -134,46 +140,63 @@ public class DrawPanel extends JPanel {
             g2.drawLine(x1, y1, x2, y2);
             sourceP = targetP;
         }
-    }
+    }*/
 
-    /*private void paintLaser(Graphics g) {
+    private void paintLaser(Graphics g) {
         Graphics2D g2 = (Graphics2D) g;
         g2.setColor(new Color(200, 0, 40));
         g2.setStroke(new BasicStroke(3.0f));
         int[] sourceP = map.getSource();
         int[] targetP;
 
-        int totalTime = App.i * App.delayTime/1000;
-        int velocity = 1;// 1 grid/ 1 s
-        int totalStep = totalTime * velocity;
-        int passedStep = 0;
+        double totalTime = i * delayTime;
+        double totalStep = totalTime * velocity;
+        double passedStep = 0;
         int x1, y1, x2, y2;
-        while (laserPath.size() > 0) {
-            Mirror targetMirror = laserPath.peek();
+
+        ArrayDeque<Mirror> path = laserPath.clone();
+        while (path.size() > 0) {
+            Mirror targetMirror = path.peek();
             targetP = targetMirror.getPo();
             int distance = LaserMap.getDistance(targetP, sourceP);
             if(passedStep + distance <= totalStep){
+                //System.out.println("==1==: " + i);
                 x1 = alignToRight + sourceP[1] * size + size / 2;
                 y1 = alignToUp + sourceP[0] * size + size / 2;
                 x2 = alignToRight + targetP[1] * size + size / 2;
                 y2 = alignToUp + targetP[0] * size + size / 2;
                 g2.drawLine(x1, y1, x2, y2);
                 passedStep += distance;
-                laserPath.pop();
+                path.pop();
                 if(passedStep == totalStep)
                     break;
-            }
-            else{
+            } else{
+                //System.out.println("==2==: " + i);
                 x1 = alignToRight + sourceP[1] * size + size / 2;
                 y1 = alignToUp + sourceP[0] * size + size / 2;
-                x2 = alignToRight + sourceP[1] * size + size / 2 + size * (targetP[1] - sourceP[1]) * (totalStep - passedStep)/distance;
-                y2 = alignToUp + sourceP[0] * size + size / 2 + size * (targetP[0] - sourceP[0]) * (totalStep - passedStep)/distance;
+                x2 = (int) (alignToRight + sourceP[1] * size + size / 2 + size * (targetP[1] - sourceP[1]) * (totalStep - passedStep)/distance);
+                y2 = (int) (alignToUp + sourceP[0] * size + size / 2 + size * (targetP[0] - sourceP[0]) * (totalStep - passedStep)/distance);
                 g2.drawLine(x1, y1, x2, y2);
                 break;
             }
             sourceP = targetP;
         }
-    }*/
+    }
+
+    @Override
+    public void run(){
+        double loopNum = laserSteps / velocity / delayTime;
+        while(i <= loopNum){
+            //System.out.println("paint times: " + i);
+            repaint();
+            i++;
+            try {
+                Thread.sleep((long) (delayTime * 1000));
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+    }
 }
 
 
